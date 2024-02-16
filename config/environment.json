@@ -1,0 +1,38 @@
+{
+    "tasks": [
+    {
+        "task_id": 1,
+        "task_type": [0,0],  
+        "task_size": 100,  
+        "computing_complexity": 50,  
+        "execution_location": 1,
+        "sequence_order":0,
+        "execution_status": 1
+    },
+    {
+        "task_id": 2,
+        "task_type": [1,1],  
+        "task_size": 150,
+        "computing_complexity": 75,
+        "execution_location": 2, 
+        "sequence_order": 1,
+        "execution_status": 0
+    },   
+    {
+        "task_id": 3,
+        "task_type": [1, 1], 
+        "task_size": 120,
+        "computing_complexity": 60,
+        "execution_location": 2,
+        "sequence_order": 2,
+        "execution_status": 2
+    }
+    ],
+
+
+    "action_size": 3,  
+    "observation_space": {
+    "low": [-1.0, -1.0],
+    "high": [1.0, 1.0]
+    }
+}

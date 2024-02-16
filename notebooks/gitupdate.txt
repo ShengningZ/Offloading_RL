@@ -1,0 +1,12 @@
+Commit Changes Regularly: After making a set of changes (like completing a new feature or fixing a bug),
+ add and commit those changes:
+
+git add .
+git commit -m "Description of changes"
+
+Push Changes to GitHub: Regularly push your commits to GitHub to keep your remote repository up to date:
+
+git push
+
+
+The key: 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
