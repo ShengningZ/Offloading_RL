@@ -1,0 +1,17 @@
+in the environment of defining a task, the following values are given and defined in the environment.json file in config floder.
+The variables needed are:
+
+   "tasks": [
+    {
+        "task_id": 1,     \\This number the tasks.
+        "task_type": [0,0],   \\The first bite shows independent-"0", and in sequence-"1"
+                              \\The second bite shows the group of the sequence. If the second bite id the same,
+                              \\this means they are in the same squence.
+        "task_size": 100,   \\To be determined ...in what units such as MB or KB
+        "computing_complexity": 50,     \\...This is not considered in current stage. This involves a complex benchmark
+        "execution_location": 1,  \\0 for local, 1 for edge, 2 for cloud *This can also expanded in the furture.
+                                    For instance, if we need multiple edge server or local device ect, we need another
+                                    array with two elements to define, such as [0,2] represents the thrid local device.
+        "sequence_order":0,   \\This is used to mark the order of a sequenced task, if this task is placed 
+        "execution_status": 1 \\task is executing (0), to be executed (1), or has been executed (2)
+    }]

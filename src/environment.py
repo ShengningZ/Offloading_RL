@@ -71,8 +71,12 @@ class CustomEnv(gym.Env):
         return self.state, reward, done, {}
 
     def render(self, mode='human'):
-        """Renders the environment."""
-        # Implementation of render logic (optional for visualization)
+        if mode == 'human':
+            print(f"Current State: {self.state}")
+    # Add more detailed visualization logic here if necessary
+    # For more complex visualizations, you might implement GUI rendering or use libraries like Matplotlib or Pygame
+
+    # Implementation of render logic (optional for visualization)
 
     def initialize_state(self):
         """Initializes the state of the environment."""
