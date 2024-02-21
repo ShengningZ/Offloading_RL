@@ -6,7 +6,7 @@ git commit -m "Description of changes"
 
 Push Changes to GitHub: Regularly push your commits to GitHub to keep your remote repository up to date:
 
-git push
+git push origin main
 
 
 The key: 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

@@ -11,17 +11,22 @@ class CustomEnv(gym.Env):
         with open(config_path) as f:
             self.config = json.load(f)
         # Modifications to incorporate task types, characteristics, and execution locations
-        self.task_type = self.config["task_type"]  # Independent or sequence
-        self.task_size = self.config["task_size"]  # e.g., in MB
-        self.computing_complexity = self.config["computing_complexity"]
-        self.execution_location = self.config["execution_location"]  # Local, edge, or cloud
-        self.execution_status = self.config["execution_status"]
-        self.sequence_order = None if self.task_type == "independent" else self.config["sequence_order"]
+        # self.task_type = self.config["task_type"]  # Independent or sequence
+        # self.task_size = self.config["task_size"]  # e.g., in MB
+        # self.computing_complexity = self.config["computing_complexity"]
+        # self.execution_location = self.config["execution_location"]  # Local, edge, or cloud
+        # self.execution_status = self.config["execution_status"]
+        # self.sequence_order = None if self.task_type == "independent" else self.config["sequence_order"]
         
-        # Define action and observation space according to the new parameters
-        self.action_space = spaces.Discrete(len(self.config["execution_location_options"]))
+        # # Define action and observation space according to the new parameters
+        # self.action_space = spaces.Discrete(len(self.config["execution_location_options"]))
         self.observation_space = self.define_observation_space()
 
+        
+        #Current exectuing task
+        self.current_executing_task = 0
+        
+        
     def can_execute_task(self, current_task):
         if current_task['task_type'][0] == 1:  # It's a sequential task
             sequence_group = current_task['task_type'][1]
@@ -56,31 +61,71 @@ class CustomEnv(gym.Env):
         
         # Return the initial environment observation
         return self.state
-
-    def step(self, action):
-        # Identify the task based on the action. Assuming action directly indexes a task in the config.
-        current_task = self.config['tasks'][action]
         
-        # Check if the task can be executed.
-        if not self.can_execute_task(current_task):
-            # Task cannot be executed yet; you might want to handle this situation.
-            return self.state, 0, False, {"message": "Task cannot be executed yet"}
+    def step(self, action):
+        # Initialize cumulative reward if not already done
+        if not hasattr(self, 'cumulative_reward'):
+            self.cumulative_reward = 0
 
-        # Simulate task execution. This part depends on your specific implementation.
-        # For now, let's assume executing a task changes its status and might update the state.
-        current_task['execution_status'] = 2  # Mark as executed.
-        self.update_state(action)  # You'll need to define this method based on how executing a task changes the state.
+        current_task_index = self.current_executing_task
+        current_task = self.config['tasks'][current_task_index]
+        current_task_type = current_task['task_type']
+        # Check if the task can be executed
+        if self.can_execute_task(current_task):
+            # Simulate task execution and update task status
+            current_task['execution_status'] = 2  # Mark as executed
+            current_task['execution_location'] = self.determine_execution_location(action)
+            
+            # Calculate the reward for this task and add to cumulative reward
+            # task_reward = self.calculate_reward(current_task)
+            task_reward = 1
+            self.cumulative_reward += task_reward
+            
+            # Move to the next task
+            self.current_executing_task += 1
 
-        # Calculate the reward. Implement this based on your criteria for rewarding the agent.
-        reward = self.calculate_reward(current_task)  # Placeholder; implement this method.
+            # Check if all tasks are completed
+            done = self.check_all_tasks_completed()
+            
+            if done:
+                # Optionally reset cumulative reward for the next episode
+                final_reward = self.cumulative_reward
+                self.cumulative_reward = 0  # Reset for the next episode
+                return self.state, final_reward, done, {}
+        else:
+            # If the current task cannot be executed, you might want to handle this differently
+            task_reward = 0  # No reward if task cannot be executed
 
-        # Check if all tasks are completed to determine if the episode is done.
-        done = all(task['execution_status'] == 2 for task in self.config['tasks'])
+        # Not done yet, or task couldn't be executed
+        return self.state, task_reward, False, {"message": "Proceeding to next task or unable to execute current task"}
 
-        # Optionally, you can provide additional info about the step.
-        info = {}
+    def determine_execution_location(self, action):
+        # Map action to execution location
+        if action == 0:
+            return "local"
+        elif action == 1:
+            return "edge"
+        else:  # action == 2
+            return "cloud"
 
-        return self.state, reward, done, info
+    def calculate_reward(self, task):
+        # Example placeholders for latency and expected completion time
+        latency = self.get_task_latency(task)  # Implement this based on your latency measurements
+        expected_time = 10  # Define expected times for tasks
+        
+        # Calculate reward components
+        latency_reward = 1.0 / (latency + 1)  # Inverse of latency, +1 to avoid division by zero
+        delay_penalty = -1 if latency > expected_time else 0  # Penalize if task takes longer than expected
+        completion_reward = 1 if task['execution_status'] == 2 else 0  # Reward for completing a task
+        
+        # Combine rewards
+        reward = latency_reward + delay_penalty + completion_reward
+        return reward
+    
+    def check_all_tasks_completed(self):
+    # Check if all tasks have been executed (status 2)
+        all_completed = all(task['execution_status'] == 2 for task in self.config['tasks'])
+        return all_completed
 
     def render(self, mode='human'):
         if mode == 'human':
@@ -101,12 +146,39 @@ class CustomEnv(gym.Env):
         # Example: Update self.state, calculate reward, check if done
         return self.state, reward, done, info
 
+# if __name__ == "__main__":
+#     # Example usage
+#     env = CustomEnv(config_path="config/environment.json")
+#     state = env.reset()
+#     for _ in range(100):
+#         action = env.action_space.sample()
+#         state, reward, done, info = env.step(action)
+#         if done:
+#             break
+
+# Test on reset
+# # Create an instance of the environment
+# env = CustomEnv(config_path="config/environment.json")
+
+# # Call the reset method to initialize the environment
+# state = env.reset()
+
+# # The 'state' variable now contains the initial state of the environment
+# print("Initial State:", state)
+
+# Test on step
 if __name__ == "__main__":
-    # Example usage
     env = CustomEnv(config_path="config/environment.json")
     state = env.reset()
-    for _ in range(100):
-        action = env.action_space.sample()
+    print("Initial State:", state)
+
+    done = False
+    while not done:
+        # Example of manually selecting an action or using a simple policy
+        # This is where you'd implement your action selection logic
+        action = 1  # Randomly sample an action
+
         state, reward, done, info = env.step(action)
-        if done:
-            break
+        print(f"Action: {action}, New State: {state}, Reward: {reward}, Done: {done}")
+
+    print("Episode finished")
