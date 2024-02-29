@@ -70,6 +70,7 @@ class CustomEnv(gym.Env):
         current_task_index = self.current_executing_task
         current_task = self.config['tasks'][current_task_index]
         current_task_type = current_task['task_type']
+        print(current_task_type)
         # Check if the task can be executed
         if self.can_execute_task(current_task):
             # Simulate task execution and update task status
@@ -180,5 +181,6 @@ if __name__ == "__main__":
 
         state, reward, done, info = env.step(action)
         print(f"Action: {action}, New State: {state}, Reward: {reward}, Done: {done}")
+        print()
 
     print("Episode finished")
