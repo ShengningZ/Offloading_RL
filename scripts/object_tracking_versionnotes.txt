@@ -1,2 +1,4 @@
 object_tracking.py is a start demo showing prediction with movement with kalman filter.
-object_trackingV2.py is now adding YOLO combining with kalman to improve prediction.
+object_trackingV2.1.0 py is now adding YOLO combining with kalman to improve prediction.- just able to run our idea 
+object_trackingV2.1.1 improved the performance of prediction to make it more influent and realtime.
+object_trackingV2.2.2 aims to make the code more modular and fine grained for us to apply edge computing offloading.
