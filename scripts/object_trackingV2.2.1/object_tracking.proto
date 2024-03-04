@@ -1,28 +1,31 @@
 syntax = "proto3";
 
-package detection;
+package objectdetection;
 
 // The object detection service definition.
-service ObjectDetection {
-  // Sends an image and receives detected objects.
-  rpc DetectObjects(Image) returns (DetectionResponse);
+service ObjectDetectionService {
+  // Sends a frame to detect objects
+  rpc DetectObjects(Frame) returns (DetectionResult) {}
 }
 
-// The request message containing the image data.
-message Image {
-  bytes image = 1; // Image data in bytes, preferably compressed (e.g., JPEG)
+// The request contains an encoded image frame.
+message Frame {
+  bytes image = 1; // Image data, possibly compressed
 }
 
-// The response message containing the detection results.
-message DetectionResponse {
-  repeated DetectedObject objects = 1;
+// The response contains detected objects.
+message DetectionResult {
+  repeated Object objects = 1;
 }
 
-// Information about a detected object.
-message DetectedObject {
-  int32 id = 1; // Object ID
-  string label = 2; // Object label (e.g., "person", "car")
-  float confidence = 3; // Confidence score
-  // Bounding box [x_min, y_min, x_max, y_max], normalized to [0, 1]
-  repeated float bbox = 4; 
+// An object detected in the frame
+message Object {
+  int32 id = 1;
+  string label = 2;
+  float confidence = 3;
+  // Bounding box: x, y, width, height
+  float x = 4;
+  float y = 5;
+  float width = 6;
+  float height = 7;
 }
