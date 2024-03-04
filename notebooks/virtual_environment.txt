@@ -1,0 +1,2 @@
+source yolov5env/bin/activate
+chmod +x setup_env.sh
