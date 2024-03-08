@@ -1,0 +1,22 @@
+// object_detection.proto
+
+syntax = "proto3";
+
+package objectdetection;
+
+// The object detection service definition.
+service ObjectDetectionService {
+  // Sends a frame to the edge server for processing
+  rpc ProcessFrame(FrameRequest) returns (FrameResponse) {}
+}
+
+// The request message containing the frame data.
+message FrameRequest {
+  bytes frame = 1; // Frame data serialized to bytes
+}
+
+// The response message containing the processed data.
+message FrameResponse {
+  bytes frame = 1; // Processed frame data
+  // Add other fields as necessary, e.g., detections
+}

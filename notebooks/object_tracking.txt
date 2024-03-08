@@ -90,3 +90,15 @@ Implementation Considerations
 
 By implementing these additional functionalities and calculations, you can significantly improve the robustness,
  accuracy, and capabilities of your object tracking system, making it more suitable for complex real-world scenarios.
+
+
+Before adding feathers,
+We can start an offloading first:
+    1. Prototype Development: Start with implementing a basic offloading mechanism for one of the tasks 
+    (e.g., object detection) to test the workflow.
+    2. Performance Testing: Measure latency and power consumption for different offloading configurations
+     to find the optimal setup.
+    3. Iterative Optimization: Use the insights from testing to refine your offloading strategy, adjusting
+     serialization, compression, and batching techniques as needed.
+    4. Scalability and Robustness: Once the basic offloading mechanism is optimized, ensure the system is 
+    scalable and can handle errors gracefully, including network failures or server downtime.
