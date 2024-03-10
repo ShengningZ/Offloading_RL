@@ -1,9 +1,9 @@
-from model_loader import load_yolo_model
-from object_detection import detect_objects_yolo
-from kalman_filter_module import KalmanFilter
-from background_subtraction import initialize_object_detector, apply_object_detector
-from visualization import visualize_mask, visualize_detections, visualize_kalman_prediction
-from utilities import filter_detections_by_mask
+from scripts.object_trackingV3.modules.model_loader import load_yolo_model
+from scripts.object_trackingV3.modules.object_detection import detect_objects_yolo
+from scripts.object_trackingV3.modules.kalman_filter_module import KalmanFilter
+from scripts.object_trackingV3.modules.background_subtraction import initialize_object_detector, apply_object_detector
+from scripts.object_trackingV3.modules.visualization import visualize_mask, visualize_detections, visualize_kalman_prediction
+from scripts.object_trackingV3.modules.utilities import filter_detections_by_mask
 import cv2
 import numpy as np
 

@@ -2,8 +2,6 @@
 
 import cv2
 import numpy as np
-import project_data_pb2
-import project_data_pb2_grpc
 
 def kalman_predict_and_update(kf, detections):
     """
@@ -27,21 +25,21 @@ def kalman_predict_and_update(kf, detections):
     predicted_state = kf.predict()
     return predicted_state
 
-def update_kalman_with_contours(kf, frame, stub):
-    # Convert the frame to a protobuf message
-    image_proto = project_data_pb2.Image(
-        width=frame.shape[1], height=frame.shape[0],
-        format='BGR', data=cv2.imencode('.jpg', frame)[1].tobytes()
-    )
+def update_kalman_with_contours(kf, frame, object_detector):
+    """
+    Update the Kalman filter based on the largest contour found using background subtraction.
+
+    Parameters:
+    - kf: KalmanFilter instance.
+    - frame: The current frame from the video feed.
+    - object_detector: An initialized background subtractor object.
+    """
+    # Apply background subtraction
+    fg_mask = object_detector.apply(frame)
+    _, fg_mask_thresh = cv2.threshold(fg_mask, 254, 255, cv2.THRESH_BINARY)
+    contours, _ = cv2.findContours(fg_mask_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    # Call the gRPC service method to apply background subtraction
-    fg_mask_proto = stub.ApplyBackgroundSubtraction(image_proto)
-    
-    # Convert the protobuf message back to a numpy array
-    fg_mask = cv2.imdecode(np.frombuffer(fg_mask_proto.mask_data, np.uint8), cv2.IMREAD_GRAYSCALE)
-    
-    contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+    # Update Kalman filter with the centroid of the largest contour
     if contours:
         largest_contour = max(contours, key=cv2.contourArea)
         M = cv2.moments(largest_contour)
