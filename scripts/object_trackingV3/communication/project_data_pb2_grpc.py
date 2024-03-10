@@ -209,7 +209,7 @@ class KalmanFilterServiceStub(object):
         """
         self.UpdateState = channel.unary_unary(
                 '/project_data.KalmanFilterService/UpdateState',
-                request_serializer=project__data__pb2.DetectionResult.SerializeToString,
+                request_serializer=project__data__pb2.KalmanFilterRequest.SerializeToString,
                 response_deserializer=project__data__pb2.StateUpdate.FromString,
                 )
 
@@ -229,7 +229,7 @@ def add_KalmanFilterServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'UpdateState': grpc.unary_unary_rpc_method_handler(
                     servicer.UpdateState,
-                    request_deserializer=project__data__pb2.DetectionResult.FromString,
+                    request_deserializer=project__data__pb2.KalmanFilterRequest.FromString,
                     response_serializer=project__data__pb2.StateUpdate.SerializeToString,
             ),
     }
@@ -255,7 +255,7 @@ class KalmanFilterService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/project_data.KalmanFilterService/UpdateState',
-            project__data__pb2.DetectionResult.SerializeToString,
+            project__data__pb2.KalmanFilterRequest.SerializeToString,
             project__data__pb2.StateUpdate.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
