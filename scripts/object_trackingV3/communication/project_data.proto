@@ -51,6 +51,12 @@ message FilteringRequest {
   ForegroundMask foreground_mask = 2;
 }
 
+// KalmanFilterRequest 消息
+message KalmanFilterRequest {
+  DetectionResult detection_result = 1;
+  Image image = 2;
+}
+
 // BackgroundSubtractionService
 service BackgroundSubtractionService {
   rpc ApplyBackgroundSubtraction(Image) returns (ForegroundMask);
@@ -68,5 +74,5 @@ service FilteringService {
 
 // KalmanFilterService
 service KalmanFilterService {
-  rpc UpdateState(DetectionResult) returns (StateUpdate);
+  rpc UpdateState(KalmanFilterRequest) returns (StateUpdate);
 }

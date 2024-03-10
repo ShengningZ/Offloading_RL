@@ -51,13 +51,13 @@ class KalmanFilterServicer(project_data_pb2_grpc.KalmanFilterServiceServicer):
         self.last_measurement = None
 
     def UpdateState(self, request, context):
-        detections = [project_data_pb2.Detection(x1=d.x1, y1=d.y1, x2=d.x2, y2=d.y2, confidence=d.confidence, label=d.label) for d in request.detections]
+        detections = [project_data_pb2.Detection(x1=d.x1, y1=d.y1, x2=d.x2, y2=d.y2, confidence=d.confidence, label=d.label) for d in request.detection_result.detections]
+        frame = cv2.imdecode(np.frombuffer(request.image.data, np.uint8), cv2.IMREAD_COLOR)
         
         # Update Kalman filter based on detections
         predicted_state = kalman_predict_and_update(self.kf, detections)
 
         # Update Kalman filter based on contours
-        frame = cv2.imdecode(np.frombuffer(request.image.data, np.uint8), cv2.IMREAD_COLOR)
         update_kalman_with_contours(self.kf, frame, initialize_object_detector())
 
         # Adjust Kalman filter parameters based on object velocity
@@ -67,6 +67,7 @@ class KalmanFilterServicer(project_data_pb2_grpc.KalmanFilterServiceServicer):
         self.last_measurement = current_measurement
 
         return project_data_pb2.StateUpdate(state=project_data_pb2.State(x=predicted_state[0], y=predicted_state[1], vx=predicted_state[2], vy=predicted_state[3]))
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
