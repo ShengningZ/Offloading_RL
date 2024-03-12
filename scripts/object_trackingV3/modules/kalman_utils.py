@@ -9,13 +9,15 @@ def kalman_predict_and_update(kf, detections):
 
     Parameters:
     - kf: KalmanFilter instance.
-    - detections: A list of detections, where each detection is a tensor of the form
-                  [x1, y1, x2, y2, confidence, class_id].
+    - detections: A list of tuples, where each tuple is in the format
+                  (x1, y1, x2, y2, confidence, label).
     """
-    if len(detections) > 0:
-        for detection in detections:
-            # Convert detection to CPU and extract coordinates
-            x1, y1, x2, y2, conf, _ = detection.cpu().numpy()
+    if detections:
+        for x1, y1, x2, y2, conf, _ in detections:
+            # Ensure valid coordinate values
+            if x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0:
+                continue
+
             cx = (x1 + x2) / 2
             cy = (y1 + y2) / 2
             # Update the Kalman filter with the detection center

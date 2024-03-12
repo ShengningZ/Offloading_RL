@@ -35,6 +35,7 @@ pip install grpcio-tools
 
 pip install Flask
 pip install requests
+sudo apt install protobuf-compiler
 
 python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. object_tracking.proto
 # Additional setup steps can be added here

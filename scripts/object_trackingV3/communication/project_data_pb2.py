@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12project_data.proto\x12\x0cproject_data\"D\n\x05Image\x12\r\n\x05width\x18\x01 \x01(\x05\x12\x0e\n\x06height\x18\x02 \x01(\x05\x12\x0e\n\x06\x66ormat\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"B\n\x0e\x46oregroundMask\x12\x11\n\tmask_data\x18\x01 \x01(\x0c\x12\r\n\x05width\x18\x02 \x01(\x05\x12\x0e\n\x06height\x18\x03 \x01(\x05\"^\n\tDetection\x12\n\n\x02x1\x18\x01 \x01(\x02\x12\n\n\x02y1\x18\x02 \x01(\x02\x12\n\n\x02x2\x18\x03 \x01(\x02\x12\n\n\x02y2\x18\x04 \x01(\x02\x12\x12\n\nconfidence\x18\x05 \x01(\x02\x12\r\n\x05label\x18\x06 \x01(\t\">\n\x0f\x44\x65tectionResult\x12+\n\ndetections\x18\x01 \x03(\x0b\x32\x17.project_data.Detection\"5\n\x05State\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\n\n\x02vx\x18\x03 \x01(\x02\x12\n\n\x02vy\x18\x04 \x01(\x02\"1\n\x0bStateUpdate\x12\"\n\x05state\x18\x01 \x01(\x0b\x32\x13.project_data.State\"\x82\x01\n\x10\x46ilteringRequest\x12\x37\n\x10\x64\x65tection_result\x18\x01 \x01(\x0b\x32\x1d.project_data.DetectionResult\x12\x35\n\x0f\x66oreground_mask\x18\x02 \x01(\x0b\x32\x1c.project_data.ForegroundMask\"r\n\x13KalmanFilterRequest\x12\x37\n\x10\x64\x65tection_result\x18\x01 \x01(\x0b\x32\x1d.project_data.DetectionResult\x12\"\n\x05image\x18\x02 \x01(\x0b\x32\x13.project_data.Image2o\n\x1c\x42\x61\x63kgroundSubtractionService\x12O\n\x1a\x41pplyBackgroundSubtraction\x12\x13.project_data.Image\x1a\x1c.project_data.ForegroundMask2]\n\x16ObjectDetectionService\x12\x43\n\rDetectObjects\x12\x13.project_data.Image\x1a\x1d.project_data.DetectionResult2k\n\x10\x46ilteringService\x12W\n\x16\x46ilterDetectionsByMask\x12\x1e.project_data.FilteringRequest\x1a\x1d.project_data.DetectionResult2b\n\x13KalmanFilterService\x12K\n\x0bUpdateState\x12!.project_data.KalmanFilterRequest\x1a\x19.project_data.StateUpdateb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12project_data.proto\x12\x0cproject_data\"D\n\x05Image\x12\r\n\x05width\x18\x01 \x01(\x05\x12\x0e\n\x06height\x18\x02 \x01(\x05\x12\x0e\n\x06\x66ormat\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"B\n\x0e\x46oregroundMask\x12\x11\n\tmask_data\x18\x01 \x01(\x0c\x12\r\n\x05width\x18\x02 \x01(\x05\x12\x0e\n\x06height\x18\x03 \x01(\x05\"^\n\tDetection\x12\n\n\x02x1\x18\x01 \x01(\x02\x12\n\n\x02y1\x18\x02 \x01(\x02\x12\n\n\x02x2\x18\x03 \x01(\x02\x12\n\n\x02y2\x18\x04 \x01(\x02\x12\x12\n\nconfidence\x18\x05 \x01(\x02\x12\r\n\x05label\x18\x06 \x01(\t\">\n\x0f\x44\x65tectionResult\x12+\n\ndetections\x18\x01 \x03(\x0b\x32\x17.project_data.Detection\"5\n\x05State\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\n\n\x02vx\x18\x03 \x01(\x02\x12\n\n\x02vy\x18\x04 \x01(\x02\"9\n\tStatePost\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\n\n\x02vx\x18\x03 \x01(\x02\x12\n\n\x02vy\x18\x04 \x01(\x02\"^\n\x0bStateUpdate\x12\"\n\x05state\x18\x01 \x01(\x0b\x32\x13.project_data.State\x12+\n\nstate_post\x18\x02 \x01(\x0b\x32\x17.project_data.StatePost\"\x82\x01\n\x10\x46ilteringRequest\x12\x37\n\x10\x64\x65tection_result\x18\x01 \x01(\x0b\x32\x1d.project_data.DetectionResult\x12\x35\n\x0f\x66oreground_mask\x18\x02 \x01(\x0b\x32\x1c.project_data.ForegroundMask\"N\n\x13KalmanFilterRequest\x12\x37\n\x10\x64\x65tection_result\x18\x01 \x01(\x0b\x32\x1d.project_data.DetectionResult2o\n\x1c\x42\x61\x63kgroundSubtractionService\x12O\n\x1a\x41pplyBackgroundSubtraction\x12\x13.project_data.Image\x1a\x1c.project_data.ForegroundMask2]\n\x16ObjectDetectionService\x12\x43\n\rDetectObjects\x12\x13.project_data.Image\x1a\x1d.project_data.DetectionResult2k\n\x10\x46ilteringService\x12W\n\x16\x46ilterDetectionsByMask\x12\x1e.project_data.FilteringRequest\x1a\x1d.project_data.DetectionResult2b\n\x13KalmanFilterService\x12K\n\x0bUpdateState\x12!.project_data.KalmanFilterRequest\x1a\x19.project_data.StateUpdateb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -31,18 +31,20 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_DETECTIONRESULT']._serialized_end=332
   _globals['_STATE']._serialized_start=334
   _globals['_STATE']._serialized_end=387
-  _globals['_STATEUPDATE']._serialized_start=389
-  _globals['_STATEUPDATE']._serialized_end=438
-  _globals['_FILTERINGREQUEST']._serialized_start=441
-  _globals['_FILTERINGREQUEST']._serialized_end=571
-  _globals['_KALMANFILTERREQUEST']._serialized_start=573
-  _globals['_KALMANFILTERREQUEST']._serialized_end=687
-  _globals['_BACKGROUNDSUBTRACTIONSERVICE']._serialized_start=689
-  _globals['_BACKGROUNDSUBTRACTIONSERVICE']._serialized_end=800
-  _globals['_OBJECTDETECTIONSERVICE']._serialized_start=802
-  _globals['_OBJECTDETECTIONSERVICE']._serialized_end=895
-  _globals['_FILTERINGSERVICE']._serialized_start=897
-  _globals['_FILTERINGSERVICE']._serialized_end=1004
-  _globals['_KALMANFILTERSERVICE']._serialized_start=1006
-  _globals['_KALMANFILTERSERVICE']._serialized_end=1104
+  _globals['_STATEPOST']._serialized_start=389
+  _globals['_STATEPOST']._serialized_end=446
+  _globals['_STATEUPDATE']._serialized_start=448
+  _globals['_STATEUPDATE']._serialized_end=542
+  _globals['_FILTERINGREQUEST']._serialized_start=545
+  _globals['_FILTERINGREQUEST']._serialized_end=675
+  _globals['_KALMANFILTERREQUEST']._serialized_start=677
+  _globals['_KALMANFILTERREQUEST']._serialized_end=755
+  _globals['_BACKGROUNDSUBTRACTIONSERVICE']._serialized_start=757
+  _globals['_BACKGROUNDSUBTRACTIONSERVICE']._serialized_end=868
+  _globals['_OBJECTDETECTIONSERVICE']._serialized_start=870
+  _globals['_OBJECTDETECTIONSERVICE']._serialized_end=963
+  _globals['_FILTERINGSERVICE']._serialized_start=965
+  _globals['_FILTERINGSERVICE']._serialized_end=1072
+  _globals['_KALMANFILTERSERVICE']._serialized_start=1074
+  _globals['_KALMANFILTERSERVICE']._serialized_end=1172
 # @@protoc_insertion_point(module_scope)

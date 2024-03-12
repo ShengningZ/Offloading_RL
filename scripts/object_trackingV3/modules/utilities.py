@@ -4,7 +4,11 @@ def filter_detections_by_mask(detections, fg_mask):
     height, width = fg_mask.shape[:2]  # Get the dimensions of the fg_mask
 
     for detection in detections:
-        x1, y1, x2, y2, conf, cls = detection.cpu().numpy()
+        if isinstance(detection, tuple) or isinstance(detection, list):
+            x1, y1, x2, y2, conf, cls = detection
+        else:
+            x1, y1, x2, y2, conf, cls = detection.cpu().numpy()
+        
         points_to_check = [
             (int(x1), int(y1)),  # Top left
             (int(x2), int(y2)),  # Bottom right

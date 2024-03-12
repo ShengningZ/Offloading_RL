@@ -40,9 +40,18 @@ message State {
   float vy = 4;
 }
 
+// StatePost 消息
+message StatePost {
+  float x = 1;
+  float y = 2;
+  float vx = 3;
+  float vy = 4;
+}
+
 // StateUpdate 消息
 message StateUpdate {
   State state = 1;
+  StatePost state_post = 2;
 }
 
 // FilteringRequest 消息
@@ -51,10 +60,8 @@ message FilteringRequest {
   ForegroundMask foreground_mask = 2;
 }
 
-// KalmanFilterRequest 消息
 message KalmanFilterRequest {
   DetectionResult detection_result = 1;
-  Image image = 2;
 }
 
 // BackgroundSubtractionService
