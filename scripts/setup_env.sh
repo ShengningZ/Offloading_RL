@@ -23,21 +23,20 @@ cd yolov5
 
 # Step 3: Install Python dependencies
 echo "Installing Python dependencies from requirements.txt..."
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # Step 4: Install PyTorch
 # Note: Adjust the PyTorch installation command below based on your CUDA version
 # or use the CPU version if CUDA isn't available
 echo "Installing PyTorch..."
-pip install torch torchvision torchaudio
+pip3 install torch torchvision torchaudio
 
-pip install grpcio-tools
+pip3 install grpcio-tools
 
-pip install Flask
-pip install requests
+pip3 install Flask
+pip3 install requests
 sudo apt install protobuf-compiler
 
 python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. object_tracking.proto
-# Additional setup steps can be added here
 
 echo "YOLOv5 environment setup completed."
