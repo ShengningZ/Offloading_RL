@@ -1,4 +1,5 @@
 #mainwithremote.py
+import numpy as np
 import sys
 import os
 
@@ -8,7 +9,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 communication_dir = os.path.join(current_dir, 'communication')
 sys.path.append(communication_dir)
 import cv2
-import numpy as np
+
 import grpc
 import torch
 import communication.project_data_pb2 as project_data_pb2
@@ -83,6 +84,14 @@ def remote_kalman_filter(stub, filtered_detections):
 def convert_detections_to_tensor(detections):
     return [torch.tensor([d[0], d[1], d[2], d[3], d[4], 0]) for d in detections]
 
+def draw_detections_and_mask(frame, detections, fg_mask):
+    fg_mask_uint8 = cv2.bitwise_not(fg_mask)  # 反转掩码以获取正确的颜色
+    mask_vis = cv2.bitwise_and(frame, frame, mask=fg_mask_uint8.astype(np.uint8))
+    detections_vis = frame.copy()
+    visualize_detections(detections_vis, detections, show_confidence=True)
+    combined = cv2.addWeighted(mask_vis, 0.5, detections_vis, 0.5, 0)
+    cv2.imshow("Detections and Mask", combined)
+    
 def main():
     # Initialize components
     yolo_model = load_yolo_model()
@@ -91,7 +100,7 @@ def main():
     object_detector = initialize_object_detector()
 
     # Connect to gRPC server
-    channel = grpc.insecure_channel('10.192.31.3:50051')
+    channel = grpc.insecure_channel('localhost:50051')
     bg_subtraction_stub = project_data_pb2_grpc.BackgroundSubtractionServiceStub(channel)
     object_detection_stub = project_data_pb2_grpc.ObjectDetectionServiceStub(channel)
     filtering_stub = project_data_pb2_grpc.FilteringServiceStub(channel)
@@ -99,7 +108,7 @@ def main():
 
     # Offloading configuration
     offload_config = {
-        'background_subtraction': True,
+        'background_subtraction': False,
         'object_detection': False,
         'filtering': False,
         'kalman_filter': False
@@ -133,26 +142,24 @@ def main():
 
         # Visualize detections
         visualize_detections(frame, filtered_detections_tensors)
-
+        draw_detections_and_mask(frame, filtered_detections, fg_mask_thresh)
         print(f"Type of filtered_detections: {type(filtered_detections)}")
         print(f"Filtered detections: {filtered_detections}")
         
         if offload_config['kalman_filter']:
-            # Convert filtered detections to protobuf message format
-            detections_proto = [project_data_pb2.Detection(x1=d[0], y1=d[1], x2=d[2], y2=d[3], confidence=d[4], label=str(int(d[5].split('.')[0]))) for d in filtered_detections]
-
-            # Create KalmanFilterRequest message
-            kalman_request = project_data_pb2.KalmanFilterRequest(detection_result=project_data_pb2.DetectionResult(detections=detections_proto))
-
             # Call remote Kalman filter
-            predicted_state, state_post = remote_kalman_filter(kalman_filter_stub, kalman_request)
+            predicted_state, state_post = remote_kalman_filter(kalman_filter_stub, filtered_detections)
         else:
             predicted_state = local_kalman_filter(kf, filtered_detections)
             state_post = kf.kf.statePost
 
         print("Predicted state:", predicted_state)
-        velocity = state_post[2:4]
-        print(f"Velocity: vx={velocity[0]}, vy={velocity[1]}")
+
+        if state_post is not None:
+            velocity = state_post[2:4]
+            print(f"Velocity: vx={velocity[0]}, vy={velocity[1]}")
+        else:
+            print("Kalman filter not applied due to empty detections.")
 
         if predicted_state is not None:
             visualize_kalman_prediction(frame, predicted_state, velocity)

@@ -24,6 +24,11 @@ def visualize_kalman_prediction(frame, predicted_state, velocity):
     cv2.imshow("Kalman Prediction", frame)
     
 def visualize_filtered_detections(frame, detections, fg_mask):
+    try:
+        import numpy as np
+    except ImportError:
+        pass
+
     for detection in detections:
         x1, y1, x2, y2, conf, _ = detection.cpu().numpy()
         cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)

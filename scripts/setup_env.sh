@@ -37,7 +37,8 @@ pip3 install Flask
 pip3 install requests
 sudo apt install protobuf-compiler
 
-python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. object_tracking.proto
+python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. project_data.proto
 
 pip3 install pynvml
+pip3 install psutil
 echo "YOLOv5 environment setup completed."

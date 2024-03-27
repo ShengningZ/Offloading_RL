@@ -1,6 +1,8 @@
 import sys
 import os
 import time
+import csv
+import datetime
 
 # 获取当前脚本的路径
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,12 +41,6 @@ def receive_server_power(stub):
     server_power = stub.GetServerPower(empty_pb2.Empty())
     return server_power.cpu_power, server_power.gpu_power
 
-def visualize_async(frame, fg_mask_thresh, filtered_detections, predicted_state, state_post):
-    visualize_mask(fg_mask_thresh)
-    visualize_detections(frame, filtered_detections)
-    if predicted_state is not None:
-        visualize_kalman_prediction(frame, predicted_state, state_post[2:4])
-
 class QLearning:
     def __init__(self, state_space, action_space, learning_rate, discount_factor, exploration_rate, convergence_threshold):
         self.state_space = state_space
@@ -55,6 +51,8 @@ class QLearning:
         self.q_table = np.zeros((len(state_space), len(action_space)))
         self.convergence_threshold = convergence_threshold
         self.max_q_change = float('inf')
+        self.training_results = []  # Store training results for each iteration
+
 
     def choose_action(self, state):
         if np.random.uniform(0, 1) < self.exploration_rate:
@@ -90,10 +88,12 @@ class QLearning:
         }
         return offload_config
 
-    def train(self, frame, object_detector, yolo_model, bg_subtraction_stub, object_detection_stub, filtering_stub, kalman_filter_stub, power_stub, max_iterations=10):
+
+
+    def train(self, frame, object_detector, yolo_model, bg_subtraction_stub, object_detection_stub, filtering_stub, kalman_filter_stub, power_stub, max_iterations=100):
         min_latency = float('inf')
         min_energy = float('inf')
-        best_offload_configs = [None, None, None]  # 存储前三个最佳卸载配置
+        best_offload_configs = [None, None, None]  # Store top three best offload configurations
         
         for iteration in range(max_iterations):
             print(f"Iteration {iteration + 1}/{max_iterations}")
@@ -115,22 +115,42 @@ class QLearning:
                 print(f"Client CPU power: {measure_cpu_power():.2f}W, Client GPU power: {measure_gpu_power():.2f}W")
                 server_cpu_power, server_gpu_power = receive_server_power(power_stub)
                 print(f"Server CPU power: {server_cpu_power:.2f}W, Server GPU power: {server_gpu_power:.2f}W")
-                
-                if total_latency < min_latency and total_energy < min_energy:
-                    min_latency = total_latency
-                    min_energy = total_energy
-                    best_offload_configs[0] = action
-                    best_offload_configs[1] = best_offload_configs[0]
-                    best_offload_configs[2] = best_offload_configs[1]
-                elif total_latency < min_latency + self.convergence_threshold and total_energy < min_energy + self.convergence_threshold:
-                    best_offload_configs[1] = action
-                    best_offload_configs[2] = best_offload_configs[1]
-                elif total_latency < min_latency + 2 * self.convergence_threshold and total_energy < min_energy + 2 * self.convergence_threshold:
-                    best_offload_configs[2] = action
+
+                # Save training results for the current iteration
+                self.training_results.append({
+                    'iteration': iteration + 1,
+                    'config': action,
+                    'total_latency': total_latency,
+                    'total_energy': total_energy,
+                    'client_cpu_power': measure_cpu_power(),
+                    'client_gpu_power': measure_gpu_power(),
+                    'server_cpu_power': server_cpu_power,
+                    'server_gpu_power': server_gpu_power,
+                    'reward': reward
+                })
+
+                if total_latency < min_latency or total_energy < min_energy:
+                    if action not in best_offload_configs:
+                        min_latency = min(min_latency, total_latency)
+                        min_energy = min(min_energy, total_energy)
+                        best_offload_configs[2] = best_offload_configs[1]
+                        best_offload_configs[1] = best_offload_configs[0]
+                        best_offload_configs[0] = action
                     
             if self.max_q_change < self.convergence_threshold:
                 print("Q-values converged. Stopping training.")
                 break
+
+        # Save training results to a CSV file
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"training_results_{timestamp}.csv"
+        fieldnames = ['iteration', 'config', 'total_latency', 'total_energy', 'client_cpu_power', 'client_gpu_power', 'server_cpu_power', 'server_gpu_power', 'reward']
+        with open(filename, mode='w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(self.training_results)
+        
+        print(f"Training results saved to {filename}")
                 
         return best_offload_configs
 
@@ -148,6 +168,8 @@ class QLearning:
             print("locally processing bc")
             fg_mask_thresh = local_background_subtraction(object_detector, frame)
 
+        visualize_mask(fg_mask_thresh)
+
         if offload_config['object_detection']:
             print("offloading od")
             detections = remote_object_detection(object_detection_stub, frame)
@@ -160,34 +182,22 @@ class QLearning:
         if offload_config['filtering']:
             print("offloading filtering")
             filtered_detections = remote_filtering(filtering_stub, detections, fg_mask_thresh)
-            filtered_detections = convert_detections_to_tensor(filtered_detections)
-            # 将过滤后的检测结果转换为张量列表
-            print("Filtered detections before calling remote_kalman_filter:")
-            print(filtered_detections)
-            print("Type of filtered_detections:", type(filtered_detections))
-            if len(filtered_detections) > 0:
-                print("Type of each detection:", type(filtered_detections[0]))
-                print("Shape of each detection:", filtered_detections[0].shape)
-            else:
-                print("No detections found.")
+            filtered_detections = convert_detections_to_tensor(filtered_detections)  # 将过滤后的检测结果转换为张量列表
         else:
             print("locally filtering")
             filtered_detections = local_filtering(detections, fg_mask_thresh)
-            filtered_detections = convert_detections_to_tensor(filtered_detections)
-            # 将过滤后的检测结果转换为张量列表
-            print("Filtered detections before calling local_kalman_filter:")
-            print(filtered_detections)
-            print("Type of filtered_detections:", type(filtered_detections))
-            if len(filtered_detections) > 0:
-                print("Type of each detection:", type(filtered_detections[0]))
-                print("Shape of each detection:", filtered_detections[0].shape)
-            else:
-                print("No detections found.")
-                
+            filtered_detections = convert_detections_to_tensor(filtered_detections)  # 将过滤后的检测结果转换为张量列表
+
         if offload_config['kalman_filter'] and len(filtered_detections) > 0:
             print("offloading kalman")
-            # 调用远程卡尔曼滤波
-            predicted_state, state_post = remote_kalman_filter(kalman_filter_stub, filtered_detections)
+            # Convert filtered detections to protobuf message format
+            detections_proto = [project_data_pb2.Detection(x1=d[0].item(), y1=d[1].item(), x2=d[2].item(), y2=d[3].item(), confidence=d[4].item(), label=str(int(d[5].item()))) for d in filtered_detections]
+
+            # Create KalmanFilterRequest message
+            kalman_request = project_data_pb2.KalmanFilterRequest(detection_result=project_data_pb2.DetectionResult(detections=detections_proto))
+
+            # Call remote Kalman filter
+            predicted_state, state_post = remote_kalman_filter(kalman_filter_stub, kalman_request)
         elif len(filtered_detections) > 0:
             print("local kalman")
             predicted_state = local_kalman_filter(kf, filtered_detections)
@@ -201,9 +211,11 @@ class QLearning:
             velocity = state_post[2:4]
             print(f"Velocity: vx={velocity[0]}, vy={velocity[1]}")
 
-        # 启动一个新线程进行可视化
-        visualization_thread = threading.Thread(target=visualize_async, args=(frame, fg_mask_thresh, filtered_detections, predicted_state, state_post))
-        visualization_thread.start()
+        # Visualize detections
+        visualize_detections(frame, filtered_detections)
+
+        if predicted_state is not None:
+            visualize_kalman_prediction(frame, predicted_state, velocity)
 
         cpu_power_after = measure_cpu_power()
         gpu_power_after = measure_gpu_power()
@@ -220,141 +232,65 @@ class QLearning:
 
         return processing_time, total_energy
 
-
-
-
-    def process_frame(self, frame, best_offload_config, object_detector, yolo_model, bg_subtraction_stub, object_detection_stub, filtering_stub, kalman_filter_stub):
-        if best_offload_config[0]:  # Background subtraction
-            print("Performing remote background subtraction")
-            fg_mask_thresh = remote_background_subtraction(bg_subtraction_stub, frame)
-        else:
-            print("Performing local background subtraction")
-            fg_mask_thresh = local_background_subtraction(object_detector, frame)
-
-        if best_offload_config[1]:  # Object detection
-            print("Performing remote object detection")
-            detections = remote_object_detection(object_detection_stub, frame)
-        else:
-            print("Performing local object detection")
-            detections = local_object_detection(frame, yolo_model)
-            detections = detections.cpu().numpy().tolist()
-            detections = [torch.tensor(d) for d in detections]  # Convert to list of PyTorch tensors
-
-        if best_offload_config[2]:  # 过滤
-            print("执行远程过滤")
-            filtered_detections = remote_filtering(filtering_stub, detections, fg_mask_thresh)
-            filtered_detections = convert_detections_to_tensor(filtered_detections)  # 将过滤后的检测结果转换为张量列表
-        else:
-            print("执行本地过滤")
-            filtered_detections = local_filtering(detections, fg_mask_thresh)
-
-        if best_offload_config[3] and len(filtered_detections) > 0:  # Kalman filter
-            print("Performing remote Kalman filtering")
-            predicted_state, state_post = remote_kalman_filter(kalman_filter_stub, filtered_detections)
-        elif len(filtered_detections) > 0:
-            print("Performing local Kalman filtering")
-            kf = KalmanFilter()
-            predicted_state = local_kalman_filter(kf, filtered_detections)
-            state_post = kf.kf.statePost
-        else:
-            predicted_state = None
-            state_post = None
-        
-            cv2.imshow("Output", frame)  # 添加这行以确保帧被显示
-
-        return frame, fg_mask_thresh, filtered_detections, predicted_state, state_post
-
-
     def main(self, cap, object_detector, yolo_model, bg_subtraction_stub, object_detection_stub, filtering_stub, kalman_filter_stub, power_stub):
-        print("Entering main function")
         training_finished = False
-        frame_counter = 0
-        best_offload_config = None
-        
-        # 创建一个事件来控制训练线程
-        train_thread_stop_event = threading.Event()
-        
-        def train_thread():
-            nonlocal training_finished, best_offload_config
-            print("Training Q-learning model")
-            _, frame = cap.read()  # 读取一帧用于训练
-            best_offload_config = self.train(frame, object_detector, yolo_model, bg_subtraction_stub, object_detection_stub, filtering_stub, kalman_filter_stub, power_stub)
-            training_finished = True
-            print(f"Best offload config: {best_offload_config[0]}")
-            print(f"Second best offload config: {best_offload_config[1]}")
-            print(f"Third best offload config: {best_offload_config[2]}")
-            print("Training completed.")
-            
-            # 检查停止事件
-            if train_thread_stop_event.is_set():
-                print("Training thread stopped by main thread.")
-                return
-
-        try:
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    print("Failed to read frame from video stream")
-                    break
-
-                print("Frame read successfully")
-
-                if not training_finished:
-                    if frame_counter == 0:
-                        # 启动训练线程
-                        train_thread_obj = threading.Thread(target=train_thread)
-                        train_thread_obj.start()
-                    frame_counter += 1
-                else:
-                    frame, fg_mask_thresh, filtered_detections, predicted_state, state_post = self.process_frame(frame, best_offload_config, object_detector, yolo_model, bg_subtraction_stub, object_detection_stub, filtering_stub, kalman_filter_stub)
-                    
-                    # 直接在主线程中进行可视化
-                    visualize_mask(fg_mask_thresh)
-                    visualize_detections(frame, filtered_detections)
-                    if predicted_state is not None:
-                        visualize_kalman_prediction(frame, predicted_state, state_post[2:4])
-                    cv2.imshow("Output", frame)
-
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-        finally:
-            # 设置事件来停止训练线程
-            train_thread_stop_event.set()
-            
-            # 等待训练线程退出
-            if 'train_thread_obj' in locals():
-                train_thread_obj.join()
-            
-            # 释放资源
-            cap.release()
-            cv2.destroyAllWindows()
-
-
-
-class VisualizationThread(threading.Thread):
-    def __init__(self):
-        super().__init__()
-        self.visualization_data = None
-        self.frame = None  # 添加一个帧缓存
-
-    def run(self):
         while True:
-            if self.visualization_data is not None:
-                self.frame, fg_mask_thresh, filtered_detections, predicted_state, state_post = self.visualization_data
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            if not training_finished:
+                print("Training Q-learning model")
+                best_offload_configs = self.train(frame, object_detector, yolo_model, bg_subtraction_stub, object_detection_stub, filtering_stub, kalman_filter_stub, power_stub)
+                training_finished = True
+                print(f"Best offload config: {best_offload_configs[0]}")
+                print(f"Second best offload config: {best_offload_configs[1]}")
+                print(f"Third best offload config: {best_offload_configs[2]}")
+                print("Training completed.")
+                break
+            else:
+                best_offload_config = best_offload_configs[0]
+                print(f"Using best offload config: {best_offload_config}")
+
+                if best_offload_config[0]:  # Background subtraction
+                    fg_mask_thresh = remote_background_subtraction(bg_subtraction_stub, frame)
+                else:
+                    fg_mask_thresh = local_background_subtraction(object_detector, frame)
+
+                if best_offload_config[1]:  # Object detection
+                    detections = remote_object_detection(object_detection_stub, frame)
+                else:
+                    detections = local_object_detection(frame, yolo_model)
+                    detections = detections.cpu().numpy().tolist()
+                    detections = [torch.tensor(d) for d in detections]  # Convert to list of PyTorch tensors
+
+                if best_offload_config[2]:  # Filtering
+                    filtered_detections = remote_filtering(filtering_stub, detections, fg_mask_thresh)
+                    filtered_detections = convert_detections_to_tensor(filtered_detections)  # 将过滤后的检测结果转换为张量列表
+                else:
+                    filtered_detections = local_filtering(detections, fg_mask_thresh)
+                    filtered_detections = convert_detections_to_tensor(filtered_detections) 
+                
+                if best_offload_config[3] and len(filtered_detections) > 0:  # Kalman filter
+                    predicted_state, state_post = remote_kalman_filter(kalman_filter_stub, filtered_detections)
+                elif len(filtered_detections) > 0:
+                    kf = KalmanFilter()
+                    predicted_state = local_kalman_filter(kf, filtered_detections)
+                    state_post = kf.kf.statePost
+                else:
+                    predicted_state = None
+                    state_post = None
+
                 visualize_mask(fg_mask_thresh)
-                visualize_detections(self.frame, filtered_detections)
+                visualize_detections(frame, filtered_detections)
                 if predicted_state is not None:
-                    visualize_kalman_prediction(self.frame, predicted_state, state_post[2:4])
-                self.visualization_data = None
-            
-            if self.frame is not None:  # 仅当帧已被赋值时才显示
-                cv2.imshow("Output", self.frame)
-            
+                    visualize_kalman_prediction(frame, predicted_state, state_post[2:4])
+
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-    def update_data(self, data):
-        self.visualization_data = data
+        cap.release()
+        cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     # Initialize components

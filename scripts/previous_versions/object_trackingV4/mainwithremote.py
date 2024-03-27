@@ -87,7 +87,7 @@ def main():
     object_detector = initialize_object_detector()
 
     # Connect to gRPC server
-    channel = grpc.insecure_channel('localhost:50051')
+    channel = grpc.insecure_channel('192.168.0.108:50051')
     bg_subtraction_stub = project_data_pb2_grpc.BackgroundSubtractionServiceStub(channel)
     object_detection_stub = project_data_pb2_grpc.ObjectDetectionServiceStub(channel)
     filtering_stub = project_data_pb2_grpc.FilteringServiceStub(channel)
@@ -95,10 +95,10 @@ def main():
 
     # Offloading configuration
     offload_config = {
-        'background_subtraction': True,
+        'background_subtraction': False,
         'object_detection': False,
         'filtering': False,
-        'kalman_filter': False
+        'kalman_filter': True
     }
 
     while True:
